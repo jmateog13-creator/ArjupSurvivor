@@ -366,10 +366,66 @@
             display: inline-block;
             /* Allows transform if needed */
         }
+
+        /* --- MOBILE ORIENTATION OVERLAY --- */
+        #rotate-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            color: #FFF;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #rotate-overlay img {
+            width: 100px;
+            margin-bottom: 20px;
+            animation: rotate-icon 2s infinite ease-in-out;
+        }
+
+        @keyframes rotate-icon {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            50% {
+                transform: rotate(-90deg);
+            }
+
+            100% {
+                transform: rotate(0deg);
+            }
+        }
+
+        /* Show overlay only on mobile/tablet portrait */
+        @media screen and (orientation: portrait) and (max-width: 1024px) {
+            #rotate-overlay {
+                display: flex;
+            }
+
+            #app-container {
+                display: none;
+                /* Hide game to save resources */
+            }
+        }
     </style>
 </head>
 
 <body>
+    <!-- Rotate Overlay -->
+    <div id="rotate-overlay">
+        <img src="images/arjup.png" alt="Rotate Device">
+        <h2 class="bungee" style="color: yellow; margin-bottom: 10px;">GIRA EL MÒBIL, PRESI!</h2>
+        <p>Aquest joc es gaudeix millor en horitzontal.</p>
+    </div>
 
     <div id="app-container">
         <!-- Audio Elements (Moved to top for JS visibility) -->
@@ -928,8 +984,20 @@
         document.getElementById('btn-win-menu').addEventListener('click', () => showScreen('selector'));
 
         window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); jump(); } });
-        gameArea.addEventListener('mousedown', jump);
-        gameArea.addEventListener('touchstart', (e) => { e.preventDefault(); jump(); });
+        // Update: Listen on window for broader touch support
+        window.addEventListener('mousedown', (e) => {
+            // Only jump if clicking outside specific interactive elements like buttons/inputs
+            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+                jump();
+            }
+        });
+        window.addEventListener('touchstart', (e) => {
+            // Only jump if tapping outside buttons/inputs
+            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                jump();
+            }
+        }, { passive: false });
     </script>
 
     <!-- Background Music -->
