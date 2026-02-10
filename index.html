@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="ca">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Arjup Survivor - Adrián Comes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #FFFFFF;
+            --text-color: #FFFFFF;
+            --accent-color: #D81E1E;
+            --border-width: 3px;
+            --comic-border: var(--border-width) solid #FFFFFF;
+            /* Ensure border is also white */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-color);
+        }
+
+        h1,
+        h2,
+        h3,
+        .bungee {
+            font-family: 'Bungee', cursive;
+            text-transform: uppercase;
+        }
+
+        #app-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('images/fons.jpg');
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-scale-wrapper {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            flex-shrink: 0;
+            transform-origin: center;
+            z-index: 2;
+        }
+
+        #app-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            /* Darker overlay for white text contrast */
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Ensure screens are above the background overlay */
+        .screen {
+            z-index: 2;
+        }
+
+        /* Screens */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            padding: 40px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Branding */
+        #logo-arjup {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 80px;
+            z-index: 100;
+        }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: var(--comic-border);
+            padding: 15px 30px;
+            font-family: 'Bungee', cursive;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 5px 5px 0 #000;
+            transition: transform 0.1s, box-shadow 0.1s;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+
+        .btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 #000;
+        }
+
+        /* Login Screen */
+        input[type="text"] {
+            border: var(--comic-border);
+            padding: 15px;
+            font-size: 18px;
+            width: 300px;
+            margin-top: 20px;
+            outline: none;
+            text-align: center;
+        }
+
+        .mission-box {
+            background-color: rgba(255, 251, 230, 0.2);
+            /* Semi-transparent for dark background */
+            border: 2px dashed var(--accent-color);
+            padding: 15px;
+            margin: 20px 0;
+            max-width: 500px;
+            color: #FFFFFF;
+        }
+
+        /* Level Selector */
+        #level-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .level-btn {
+            width: 60px;
+            height: 60px;
+            border: var(--comic-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Bungee', cursive;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .level-completed {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .level-current {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .level-locked {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Game Screen */
+        #game-area {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* HUD Level & Time */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+            text-align: left;
+        }
+
+        /* Lives - Top Right */
+        #lives-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .life-icon {
+            width: 40px;
+            height: 40px;
+            background-image: url('images/arjup.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        #floor {
+            position: absolute;
+            bottom: 80px;
+            width: 100%;
+            height: 4px;
+            background-color: #000;
+        }
+
+        #player {
+            position: absolute;
+            bottom: 84px;
+            left: 80px;
+            width: 110px;
+            /* Increased from 70px */
+            height: 110px;
+            /* Increased from 70px */
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            z-index: 5;
+        }
+
+        .obstacle {
+            position: absolute;
+            bottom: 84px;
+            width: 90px;
+            /* Increased from 60px */
+            height: 90px;
+            /* Increased from 60px */
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            z-index: 4;
+        }
+
+        /* Modal / Dialog */
+        .modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            background: #222;
+            /* Darker background for modals */
+            color: #FFF;
+            border: var(--comic-border);
+            box-shadow: 15px 15px 0 rgba(0, 0, 0, 0.5);
+            padding: 30px;
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #claudia-img {
+            width: 150px;
+            border: 4px solid var(--accent-color);
+            border-radius: 50%;
+            margin: 20px 0;
+        }
+
+        /* Game Over & Win */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            /* Dark background for overlays */
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #FFF;
+        }
+
+        #win-screen .final-img {
+            max-width: 300px;
+            border: var(--comic-border);
+            margin: 20px 0;
+        }
+
+        #timestamp {
+            font-size: 12px;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        /* Tutorial Screen Styles */
+        #tutorial-grid {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .tutorial-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 150px;
+        }
+
+        .tutorial-img {
+            height: 100px;
+            /* Thumbnail size */
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+
+        .tutorial-desc {
+            font-size: 14px;
+            font-weight: bold;
+            color: yellow;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        /* Utility */
+        .red-text {
+            color: var(--accent-color);
+        }
+
+        /* Mission Box specific style for "Claudia Remolina" */
+        .mission-box .red-text {
+            font-size: 1.4em;
+            text-transform: uppercase;
+            font-weight: 900;
+            display: inline-block;
+            /* Allows transform if needed */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="app-container">
+        <!-- Audio Elements (Moved to top for JS visibility) -->
+        <audio id="bg-music" loop>
+            <source src="audio/dizzee-rascal-bonkers-lyrics-128-ytshorts.savetube.me.mp3" type="audio/mpeg">
+        </audio>
+
+        <div id="volume-control">
+            <label for="volume-slider" style="font-size: 12px; margin-right: 5px;">🔊</label>
+            <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
+        </div>
+
+        <div id="game-scale-wrapper">
+            <img src="images/arjup.png" id="logo-arjup" alt="Arjup Duck">
+
+            <!-- Screen: Login -->
+            <div id="screen-login" class="screen active">
+                <h1>ADRIÁN COMES:<br><span class="red-text">FALLAS SURVIVOR</span></h1>
+                <p class="bungee" style="margin-top: 10px;">Joc Oficial de la Penya L'Arjup</p>
+
+                <div class="mission-box">
+                    <p><strong>MISSIÓ:</strong> Acompanya a la nostra Dama, <span class="red-text">Claudia
+                            Remolina</span>,
+                        i sobretot... no la lies!</p>
+                </div>
+
+                <input type="text" id="soci-input" placeholder="Nom del Soci/a">
+                <button class="btn" id="btn-start-login">COMENÇAR LA FESTA</button>
+            </div>
+
+            <!-- Screen: Tutorial -->
+            <div id="screen-tutorial" class="screen">
+                <h2>INSTRUCCIONS DE LA FESTA</h2>
+                <p>Presi, has d'esquivar els perills de la nit:</p>
+
+                <div id="tutorial-grid">
+                    <div class="tutorial-item">
+                        <img src="images/cubata.png" class="tutorial-img" alt="Cubata">
+                        <span class="tutorial-desc">Els "Ron Ron Redbull"</span>
+                    </div>
+                    <div class="tutorial-item">
+                        <img src="images/caddie.png" class="tutorial-img" alt="Caddie">
+                        <span class="tutorial-desc">Els "VLs" del Caddie</span>
+                    </div>
+                    <div class="tutorial-item">
+                        <img src="images/padel.png" class="tutorial-img" alt="Padel">
+                        <span class="tutorial-desc">Les partides de Pàdel</span>
+                    </div>
+                </div>
+
+                <button class="btn" id="btn-tutorial-continue">ENTESOS, ANEM-HI!</button>
+            </div>
+
+            <!-- Screen: Level Selector -->
+            <div id="screen-selector" class="screen">
+                <h2>SELECTOR DE NIVELLS</h2>
+                <p>Tria la Pleitesia:</p>
+                <div id="level-grid"></div>
+                <button class="btn" id="btn-back-login"
+                    style="background-color: #666; font-size: 12px; padding: 10px 20px;">TORNAR</button>
+            </div>
+
+            <!-- Screen: Game Area -->
+            <div id="screen-game" class="screen" style="padding: 0;">
+                <div id="hud">
+                    <!-- Simplified Level Display -->
+                    <div class="bungee" style="font-size: 24px; color: yellow; text-shadow: 2px 2px 0 #000;"
+                        id="display-level"></div>
+                    <div class="bungee">TEMPS: <span id="display-timer">20</span>s</div>
+                    <div style="font-size: 14px; font-weight: bold;">SOCI: <span id="display-soci">---</span></div>
+                </div>
+
+                <div id="lives-container"></div>
+
+                <div id="game-area">
+                    <div id="floor"></div>
+                    <div id="player" style="background-image: url('images/adri.png');"></div>
+                </div>
+
+                <!-- Level Transition Modal -->
+                <div id="modal-transition" class="modal">
+                    <h2 id="trans-title" class="red-text" style="margin-bottom: 20px;">HAS ARRIBAT A LA PLEITESIA</h2>
+                    <img src="" id="claudia-img" alt="" style="display: none;"> <!-- Hidden -->
+                    <p id="trans-phrase" style="font-size: 18px; font-weight: bold;">Pots continuar, Presi.</p>
+                    <button class="btn" id="btn-next-level" style="margin-top: 30px;">SEGÜENT PLEITESIA</button>
+                </div>
+
+                <!-- Game Over Overlay -->
+                <div id="overlay-gameover" class="overlay">
+                    <h1 class="red-text">GAME OVER</h1>
+                    <p id="gameover-msg" style="font-weight: bold; margin: 20px 0;"></p>
+                    <button class="btn" id="btn-restart">REINTENTAR</button>
+                    <button class="btn" id="btn-menu" style="background-color: #333;">MENÚ</button>
+                </div>
+
+                <!-- Win Overlay -->
+                <div id="overlay-win" class="overlay">
+                    <h1 class="red-text">ENHORABONA!</h1>
+                    <h2 id="win-name-display"></h2>
+                    <p>Has completat el repte de L'Arjup.</p>
+                    <img src="images/pleitesia.png" class="final-img" alt="Pleitesia">
+                    <p>Fes captura i passa-la al grup per al teu premi!</p>
+                    <div id="timestamp" class="bungee"></div>
+                    <button class="btn" id="btn-win-menu">TORNAR AL MENÚ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Config & Data
+        const LEVEL_NAMES = [
+            "Junta local fallera",
+            "Embut",
+            "Nou barri",
+            "Benicarlo",
+            "Conquistaors",
+            "Barraca",
+            "Carrasca",
+            "9 de octubre"
+        ];
+
+        const CLAUDIA_PHRASES = [
+            "La Junta Local aprova la teua gestió!",
+            "Has passat l'Embut sense ofegaments.",
+            "Nou Barri conquerit! Seguim!",
+            "Benicarló es rendeix als teus peus.",
+            "Els Conquistaors et saluden, Presi.",
+            "La Barraca està en flames (de festa)!",
+            "Carrasca superada. Ja quasi ho tens!",
+            "9 de Octubre? Més ben dit, 10 de 10!",
+            "L'últim esforç per a la glòria!"
+        ];
+
+        const OBSTACLES_CONFIG = [
+            { img: 'images/cubata.png', msg: 'Ron, ron, ron, REDBULL! A dormir la mona!', hitBox: { w: 180, h: 260 } }, // EVEN BIGGER
+            { img: 'images/caddie.png', msg: "T'han liat als VL del Caddie. No arribes a la despertà!", hitBox: { w: 220, h: 240 } }, // EVEN BIGGER
+            { img: 'images/padel.png', msg: "T'han guanyat al pàdel i arribes tard.", hitBox: { w: 180, h: 160 } } // Kept same (already big)
+        ];
+
+        const GRAVITY = 0.7;
+        const JUMP_FORCE = -19; // Reduced from -23 (User "salta menos")
+        const LEVEL_DURATION = 20;
+
+        // Elements
+        const screens = {
+            login: document.getElementById('screen-login'),
+            tutorial: document.getElementById('screen-tutorial'),
+            selector: document.getElementById('screen-selector'),
+            game: document.getElementById('screen-game')
+        };
+
+        function checkCollisions() {
+            // ... (Collisions are fine, not touching)
+            // But wait, replace_file_content needs contiguous block. 
+            // I'll skip re-pasting checkCollisions if I can target specific areas or use multi_replace.
+            // Using multi_replace is safer for non-contiguous.
+            // === CONFIGURACIÓN DE HITBOXES (CAJAS DE COLISIÓN) ===
+
+            // JUGADOR: Hacemos al jugador más "flaco" para que sea difícil darle
+            // El jugador mide 110px de ancho. Le quitamos 40px por cada lado.
+            // Solo colisionará el centro del cuerpo (30px centrales).
+            const pPadX = 40;
+            const pPadY = 15; // Le quitamos un poco de cabeza para no chocar con el aire
+
+            const playerRect = {
+                l: 80 + pPadX,
+                r: 80 + 110 - pPadX,
+                // Calculamos el TOP basándonos en la posición Y del salto
+                t: (500 - 60 + playerY - 110) + pPadY,
+                b: (500 - 60 + playerY) - 10 // Pies (le damos 10px de margen abajo)
+            };
+
+            for (const obs of obstacles) {
+                // OBSTÁCULOS: Recortamos su caja para que sea más pequeña que la imagen
+
+                let oPadX = 30; // Margen lateral estandar
+                let oPadTop = 40; // Margen superior estandar
+
+                // === FIX ESPECÍFICO PARA CUBATA Y CADDIE ===
+                // Como son gigantes, les perdonamos MUCHO MÁS espacio.
+                if (obs.config.img.includes('cubata') || obs.config.img.includes('caddie')) {
+                    oPadX = 50; // Más estrechos (perdonamos 50px de barriga)
+                    oPadTop = 80; // Más bajos (perdonamos 80px de cabeza/pajita)
+                }
+
+                const obsRect = {
+                    l: obs.x + oPadX,
+                    r: obs.x + obs.config.hitBox.w - 100, // TAIL CUT: Seguimos recortando 100px de cola
+                    t: (500 - 60 - obs.config.hitBox.h) + oPadTop,
+                    b: (500 - 60) // Base del obstáculo
+                };
+
+                // Safety check
+                if (obsRect.r < obsRect.l) obsRect.r = obsRect.l + 10;
+
+                // COMPROBACIÓN (Si las cajas se tocan)
+                if (playerRect.l < obsRect.r && playerRect.r > obsRect.l &&
+                    playerRect.t < obsRect.b && playerRect.b > obsRect.t) {
+
+                    lives--;
+                    updateLivesUI();
+
+                    if (lives <= 0) {
+                        endGame(obs.config.msg);
+                    } else {
+                        // Invencibilidad temporal (parpadeo)
+                        invincibilityTimer = 1.5;
+                        // Efecto visual de daño (opcional: poner fondo rojo un instante)
+                        document.body.style.backgroundColor = "red";
+                        setTimeout(() => document.body.style.backgroundColor = "black", 100);
+                    }
+                    return;
+                }
+            }
+        }
+        // ... (Skipping unchanged lines for brevity, context matching below)
+
+
+        const sociInput = document.getElementById('soci-input');
+        const levelGrid = document.getElementById('level-grid');
+        const displayLevel = document.getElementById('display-level');
+        const displayTimer = document.getElementById('display-timer');
+        const displaySoci = document.getElementById('display-soci');
+        const player = document.getElementById('player');
+        const gameArea = document.getElementById('game-area');
+        const modalTransition = document.getElementById('modal-transition');
+        const overlayGameOver = document.getElementById('overlay-gameover');
+        const overlayWin = document.getElementById('overlay-win');
+        const livesContainer = document.getElementById('lives-container');
+
+        // Audio
+        const bgMusic = document.getElementById('bg-music');
+        const volSlider = document.getElementById('volume-slider');
+
+        // State
+        let sociName = localStorage.getItem('arjup_soci_name') || "";
+        let maxLevel = parseInt(localStorage.getItem('arjup_max_level')) || 1;
+        let currentLevel = 1;
+        let isGameRunning = false;
+        let lives = 3;
+        let playerY = 0;
+        let playerVelocityY = 0;
+        let isJumping = false;
+        let obstacles = [];
+        let gameLoopId;
+        let levelTimer = 0;
+        let spawnTimer = 0;
+        let currentSpawnTarget = 2.0; // Variable spawn rate target
+        let lastTimestamp = 0;
+        let invincibilityTimer = 0; // To prevent losing multiple lives in one hit
+        let musicStarted = false;
+
+
+        // Initialization
+        if (sociName) sociInput.value = sociName;
+
+        // Try to start music on any interaction
+        function tryPlayMusic() {
+            if (!musicStarted && bgMusic) {
+                bgMusic.volume = volSlider ? volSlider.value : 0.5;
+                bgMusic.play().then(() => {
+                    musicStarted = true;
+                    console.log("Music started!");
+                }).catch(e => {
+                    console.log("Music autoplay blocked, waiting for interaction...", e);
+                });
+            }
+        }
+
+        window.addEventListener('click', tryPlayMusic);
+        window.addEventListener('keydown', tryPlayMusic);
+        window.addEventListener('touchstart', tryPlayMusic);
+
+        if (volSlider) {
+            volSlider.addEventListener('input', (e) => {
+                if (bgMusic) bgMusic.volume = e.target.value;
+            });
+        }
+
+        function resizeGame() {
+            const wrapper = document.getElementById('game-scale-wrapper');
+            const scaleX = window.innerWidth / 800;
+            const scaleY = window.innerHeight / 500;
+            const scale = Math.min(scaleX, scaleY);
+            wrapper.style.transform = `scale(${scale})`;
+            console.log("Game Resized. Scale:", scale, "Window:", window.innerWidth, "x", window.innerHeight);
+        }
+
+        window.addEventListener('resize', resizeGame);
+        resizeGame();
+
+        function showScreen(name) {
+            Object.keys(screens).forEach(k => screens[k].classList.remove('active'));
+            screens[name].classList.add('active');
+
+            // Logic to toggle main logo
+            if (name === 'game') {
+                document.getElementById('logo-arjup').style.display = 'none';
+            } else {
+                document.getElementById('logo-arjup').style.display = 'block';
+            }
+
+            if (name === 'selector') renderLevelGrid();
+        }
+
+        function renderLevelGrid() {
+            levelGrid.innerHTML = "";
+            for (let i = 1; i <= 8; i++) { // Increased to 8 levels
+                const div = document.createElement('div');
+                div.className = 'level-btn';
+                div.textContent = i;
+                div.title = LEVEL_NAMES[i - 1]; // Mouseover hint for level name
+
+                if (i < maxLevel) {
+                    div.classList.add('level-completed');
+                    div.addEventListener('click', () => startLevel(i));
+                } else if (i === maxLevel) {
+                    div.classList.add('level-current');
+                    div.addEventListener('click', () => startLevel(i));
+                } else {
+                    div.classList.add('level-locked');
+                }
+                levelGrid.appendChild(div);
+            }
+            // Add custom grid style for 8 items if needed, or rely on auto-flow
+            levelGrid.style.gridTemplateColumns = "repeat(4, 1fr)"; // 2 rows of 4
+        }
+
+        function startLevel(lvl) {
+            currentLevel = lvl;
+            showScreen('game');
+            resetGameState();
+            isGameRunning = true;
+            lives = 3;
+            updateLivesUI();
+            displaySoci.textContent = sociName;
+
+            // Simplified Level Display
+            displayLevel.textContent = LEVEL_NAMES[currentLevel - 1].toUpperCase();
+
+            overlayGameOver.style.display = 'none';
+            overlayWin.style.display = 'none';
+            modalTransition.style.display = 'none';
+            lastTimestamp = performance.now();
+            requestAnimationFrame(gameLoop);
+
+            // Ensure music is playing
+            if (bgMusic && bgMusic.paused) tryPlayMusic();
+        }
+
+        function updateLivesUI() {
+            livesContainer.innerHTML = "";
+            for (let i = 0; i < lives; i++) {
+                const life = document.createElement('div');
+                life.className = 'life-icon';
+                livesContainer.appendChild(life);
+            }
+        }
+
+        function resetGameState() {
+            playerY = 0;
+            playerVelocityY = 0;
+            isJumping = false;
+            obstacles.forEach(o => o.element.remove());
+            obstacles = [];
+            levelTimer = 0;
+            levelTimer = 0;
+            spawnTimer = 0;
+            currentSpawnTarget = 2.0;
+            invincibilityTimer = 0;
+            player.style.opacity = "1";
+        }
+
+        function gameLoop(time) {
+            if (!isGameRunning) return;
+
+            const dt = (time - lastTimestamp) / 1000;
+            lastTimestamp = time;
+
+            if (dt > 0.1) {
+                gameLoopId = requestAnimationFrame(gameLoop);
+                return;
+            }
+
+            updatePlayer(dt);
+            updateObstacles(dt);
+            updateTimers(dt);
+            if (invincibilityTimer > 0) {
+                invincibilityTimer -= dt;
+                player.style.opacity = (Math.floor(Date.now() / 100) % 2) ? "0.5" : "1";
+                if (invincibilityTimer <= 0) player.style.opacity = "1";
+            } else {
+                checkCollisions();
+            }
+
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function updatePlayer(dt) {
+            if (isJumping) {
+                playerVelocityY += GRAVITY;
+                playerY += playerVelocityY;
+                if (playerY >= 0) {
+                    playerY = 0;
+                    playerVelocityY = 0;
+                    isJumping = false;
+                }
+            }
+            // Visual tweak: Player touches the floor visually
+            // Lowered to 60px to really touch the floor
+            player.style.bottom = (60 - playerY) + 'px';
+        }
+
+        function jump() {
+            if (!isJumping && isGameRunning && modalTransition.style.display === 'none') {
+                playerVelocityY = JUMP_FORCE;
+                isJumping = true;
+            }
+        }
+
+        function updateObstacles(dt) {
+            // Updated Difficulty Curve for 8 levels
+            let speed = 6;
+            let baseInterval = 2.0;
+
+            if (currentLevel >= 3 && currentLevel <= 5) {
+                speed = 8;
+                baseInterval = 1.6;
+            } else if (currentLevel >= 6 && currentLevel <= 7) {
+                speed = 10;
+                baseInterval = 1.3;
+            } else if (currentLevel === 8) {
+                speed = 13;
+                baseInterval = 0.9;
+            }
+
+            spawnTimer += dt;
+            if (spawnTimer > currentSpawnTarget) {
+                spawnObstacle();
+                spawnTimer = 0;
+                // NEW: Randomize next spawn time
+                // Base + Random(0.0 to 1.5s) variance
+                // This makes it so obstacles don't come like a metronome
+                currentSpawnTarget = baseInterval + (Math.random() * 1.5);
+            }
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.x -= speed;
+                obs.element.style.left = obs.x + 'px';
+                if (obs.x < -200) { // Increased removal threshold due to bigger size
+                    obs.element.remove();
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        function spawnObstacle() {
+            const config = OBSTACLES_CONFIG[Math.floor(Math.random() * OBSTACLES_CONFIG.length)];
+            const el = document.createElement('div');
+            el.className = 'obstacle';
+            el.style.backgroundImage = `url('${config.img}')`;
+            el.style.left = '850px';
+            // Apply size from config
+            el.style.width = config.hitBox.w + 'px';
+            el.style.height = config.hitBox.h + 'px';
+
+            // Visual tweak: Obstacles touch the floor. Sink them slightly.
+            // Floor at 80px.
+            el.style.bottom = '60px';
+
+            gameArea.appendChild(el);
+            obstacles.push({ element: el, x: 850, config: config });
+        }
+
+        function updateTimers(dt) {
+            levelTimer += dt;
+            const remaining = Math.max(0, LEVEL_DURATION - Math.floor(levelTimer));
+            displayTimer.textContent = remaining;
+
+            if (levelTimer >= LEVEL_DURATION) {
+                isGameRunning = false;
+                if (currentLevel < 8) { // Updated for 8 levels
+                    showLevelTransition();
+                } else {
+                    showWin();
+                }
+            }
+        }
+
+        function showLevelTransition() {
+            if (currentLevel >= maxLevel) {
+                maxLevel = currentLevel + 1;
+                localStorage.setItem('arjup_max_level', maxLevel);
+            }
+
+            // Simplified Text & Removed Missing Image
+            document.getElementById('trans-title').textContent = "HAS ARRIBAT A LA PLEITESIA";
+            document.getElementById('claudia-img').style.display = 'none'; // Hide missing image
+            document.getElementById('trans-phrase').textContent = "Pots continuar, Presi.";
+            // Hide the extra "Vist-i-plau..." text if possible, or just overwrite it?
+            // The HTML has a <p> after trans-phrase. We can just hide it via CSS or JS.
+            // Let's modify the modal HTML directly in a separate chunk to be cleaner.
+
+            modalTransition.style.display = 'flex';
+        }
+
+
+
+        function endGame(msg) {
+            isGameRunning = false;
+            cancelAnimationFrame(gameLoopId);
+            document.getElementById('gameover-msg').textContent = msg;
+            overlayGameOver.style.display = 'flex';
+        }
+
+        function showWin() {
+            isGameRunning = false;
+            cancelAnimationFrame(gameLoopId);
+            document.getElementById('win-name-display').textContent = `ENHORABONA, ${sociName.toUpperCase()}!`;
+
+            // Logic if they win logic (maybe different image or text?)
+            // User said "si gana" but didn't specify extra besides what was there, 
+            // but hinted at "pleitesia names". We used them in levels. 
+            // Win screen is fine.
+
+            const now = new Date();
+            document.getElementById('timestamp').textContent = now.toLocaleString();
+
+            overlayWin.style.display = 'flex';
+
+            if (maxLevel <= 8) {
+                maxLevel = 9; // Completed everything
+                localStorage.setItem('arjup_max_level', 9);
+            }
+        }
+
+        // Events
+        document.getElementById('btn-start-login').addEventListener('click', () => {
+            const name = sociInput.value.trim();
+            if (!name) {
+                alert("Per favor, posa el teu nom per a començar!");
+                return;
+            }
+            sociName = name;
+            localStorage.setItem('arjup_soci_name', sociName);
+            showScreen('tutorial'); // Go to tutorial first
+        });
+
+        document.getElementById('btn-tutorial-continue').addEventListener('click', () => showScreen('selector'));
+        document.getElementById('btn-back-login').addEventListener('click', () => showScreen('login'));
+        document.getElementById('btn-next-level').addEventListener('click', () => startLevel(currentLevel + 1));
+        document.getElementById('btn-restart').addEventListener('click', () => startLevel(currentLevel));
+        document.getElementById('btn-menu').addEventListener('click', () => showScreen('selector'));
+        document.getElementById('btn-win-menu').addEventListener('click', () => showScreen('selector'));
+
+        window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); jump(); } });
+        gameArea.addEventListener('mousedown', jump);
+        gameArea.addEventListener('touchstart', (e) => { e.preventDefault(); jump(); });
+    </script>
+
+    <!-- Background Music -->
+    <audio id="bg-music" loop>
+        <source src="audio/dizzee-rascal-bonkers-lyrics-128-ytshorts.savetube.me.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Volume Control -->
+    <div id="volume-control">
+        <label for="volume-slider" style="font-size: 12px; margin-right: 5px;">🔊</label>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
+    </div>
+
+    <style>
+        #volume-control {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            color: white;
+            border: 2px solid #FFF;
+        }
+
+        #volume-slider {
+            width: 80px;
+            cursor: pointer;
+        }
+    </style>
+
+    <script>
+        // Debug Logic
+        // All debug logic removed.
+    </script>
+</body>
+
+</html>
