@@ -175,6 +175,12 @@
             font-size: 20px;
             cursor: pointer;
             transition: all 0.2s;
+            /* Reset button styles */
+            padding: 0;
+            margin: 0;
+            outline: none;
+            box-shadow: none;
+            /* We add shadow on active/hover if needed, or rely on defaults */
         }
 
         .level-completed {
@@ -735,21 +741,22 @@
         function renderLevelGrid() {
             levelGrid.innerHTML = "";
             for (let i = 1; i <= 8; i++) { // Increased to 8 levels
-                const div = document.createElement('div');
-                div.className = 'level-btn';
-                div.textContent = i;
-                div.title = LEVEL_NAMES[i - 1]; // Mouseover hint for level name
+                const btn = document.createElement('button');
+                btn.className = 'level-btn';
+                btn.textContent = i;
+                btn.title = LEVEL_NAMES[i - 1]; // Mouseover hint for level name
 
                 if (i < maxLevel) {
-                    div.classList.add('level-completed');
-                    div.addEventListener('click', () => startLevel(i));
+                    btn.classList.add('level-completed');
+                    btn.addEventListener('click', () => startLevel(i));
                 } else if (i === maxLevel) {
-                    div.classList.add('level-current');
-                    div.addEventListener('click', () => startLevel(i));
+                    btn.classList.add('level-current');
+                    btn.addEventListener('click', () => startLevel(i));
                 } else {
-                    div.classList.add('level-locked');
+                    btn.classList.add('level-locked');
+                    btn.disabled = true; // Disable locked levels
                 }
-                levelGrid.appendChild(div);
+                levelGrid.appendChild(btn);
             }
             // Add custom grid style for 8 items if needed, or rely on auto-flow
             levelGrid.style.gridTemplateColumns = "repeat(4, 1fr)"; // 2 rows of 4
@@ -985,19 +992,24 @@
 
         window.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); jump(); } });
         // Update: Listen on window for broader touch support
-        window.addEventListener('mousedown', (e) => {
-            // Only jump if clicking outside specific interactive elements like buttons/inputs
-            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+        function handleJumpInput(e) {
+            let target = e.target;
+            // Handle text nodes (safeguard for older browsers or specific conditions)
+            if (target.nodeType === 3) target = target.parentNode;
+
+            // Check if interactive
+            const isInteractive = (target.tagName === 'BUTTON') ||
+                (target.tagName === 'INPUT') ||
+                (target.classList && target.classList.contains('level-btn'));
+
+            if (!isInteractive) {
+                if (e.type === 'touchstart') e.preventDefault();
                 jump();
             }
-        });
-        window.addEventListener('touchstart', (e) => {
-            // Only jump if tapping outside buttons/inputs
-            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
-                e.preventDefault();
-                jump();
-            }
-        }, { passive: false });
+        }
+
+        window.addEventListener('mousedown', handleJumpInput);
+        window.addEventListener('touchstart', handleJumpInput, { passive: false });
     </script>
 
     <!-- Background Music -->
